@@ -16,9 +16,9 @@ function Get-InfoPathType {
 }
 
 
+$OutPath = "C:\SiteEnumeration\resultsInfoPath.csv" #Add your output path for the result csv
 
-
-$webapplications = Get-SPWebApplication | Where-Object { $_.Name -in ("Main","Legacy","Index") }
+$webapplications = Get-SPWebApplication | Where-Object { $_.Name -notin ("Add your excluded Web Apps here") }
 
 foreach ($webapp in $webapplications)
 {
@@ -31,15 +31,15 @@ foreach ($webapp in $webapplications)
                 $detectionType = Get-InfoPathType -list $list
 
                 if($detectionType){
-                    Write-Host "$detectionType : $($list.Title) @ $($web.url)"
+                    Write-Host "$detectionType : $($list.Title) @ $($web.Url)"
                     [pscustomobject]@{
-                        Site = $web.url
+                        Site = $web.Url
                         List = $list.Title
                         ListId = $list.Id
                         ItemCount = $($list.Items.Count)+$($list.folders.count)
                         LastItemModified = $list.LastItemModifiedDate
                         DetectionType = $detectionType
-                    } | Export-Csv -Path "C:\SiteEnumeration\resultsInfoPath_03_13.csv" -Append -NoTypeInformation -Delimiter "`t"
+                    } | Export-Csv -Path $OutPath -Append -NoTypeInformation -Delimiter "`t" -Encoding UTF8
                 }
             }
             $web.Dispose()
