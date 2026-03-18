@@ -1,3 +1,13 @@
+[CmdletBinding()]
+param(
+    [string]$OutPath,
+    [string[]]$ExcludedWebApps = $null
+) 
+
+if((Get-PSSnapin -Name Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue) -eq $null){
+    Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
+}
+
 function Get-InfoPathType {
     param($list)
 
@@ -16,34 +26,42 @@ function Get-InfoPathType {
 }
 
 
-$OutPath = "C:\SiteEnumeration\resultsInfoPath.csv" #Add your output path for the result csv
 
-$webapplications = Get-SPWebApplication | Where-Object { $_.Name -notin ("Add your excluded Web Apps here") }
+$webapplications = Get-SPWebApplication | Where-Object { -not $ExcludedWebApps -or $_.Name -notin $ExcludedWebApps }
 
 foreach ($webapp in $webapplications)
 {
     foreach ($site in $webapp.Sites)
     {
+     try{         
         foreach ($web in $site.AllWebs)
         {
+        try{
             foreach ($list in $web.Lists)
             {
+            try{
                 $detectionType = Get-InfoPathType -list $list
-
                 if($detectionType){
                     Write-Host "$detectionType : $($list.Title) @ $($web.Url)"
                     [pscustomobject]@{
                         Site = $web.Url
                         List = $list.Title
                         ListId = $list.Id
-                        ItemCount = $($list.Items.Count)+$($list.Folders.Count)
+                        ItemCount = $list.Items.Count+$list.Folders.Count
                         LastItemModified = $list.LastItemModifiedDate
                         DetectionType = $detectionType
-                    } | Export-Csv -Path $OutPath -Append -NoTypeInformation -Delimiter "`t"
+                    } | Export-Csv -Path $OutPath -Append -NoTypeInformation -Delimiter "`t" -Encoding UTF8
                 }
+                }
+                catch{Write-Host "Error processing list '$($list.Title)' in $($web.Url) : $_"}
             }
-            $web.Dispose()
+            }
+        catch{Write-Host "Error processing web '$($web.Url)' : $_"}
+        finally{$web.Dispose()}
         }
-        $site.Dispose()
+    }
+    catch{Write-Host "Error processing site '$($site.Url)' : $_"}
+    finally{$site.Dispose()}
     }
 }
+
