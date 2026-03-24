@@ -31,6 +31,7 @@ Exports a tab-delimited CSV to the path specified by `-OutPath` with the followi
 | ExcludedWebApps | String[] | No | One or more web application names to skip. Matches against the web application Name property as shown in Central Administration. |
 
 ## Usage
+Download the Get-InfoPathType.ps1 file and run the following in SharePoint Management Shell
 ```powershell
 # Scan all web applications
 .\Get-InfoPathType.ps1 -OutPath "$env:TEMP\InfoPath.csv"
